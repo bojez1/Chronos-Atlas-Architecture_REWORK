@@ -1,4 +1,4 @@
-# 4. 🤝 GRAPHQL API CONTRACT: Frontend Specification
+# 4\. 🤝 GRAPHQL API CONTRACT: Frontend Specification
 
 This document defines the strict, non-negotiable contract between the **FastAPI/Strawberry backend** and the **Nextra frontend**. All frontend development should rely exclusively on the queries and types defined here. The backend guarantees stability for this schema.
 
@@ -38,4 +38,4 @@ These are the primary queries the Nextra frontend will use. All must be implemen
 | `timelineFigures` | `discipline: [String]`, `yearRange: [Int]` | `[Agent!]` | Populates the main **Master Timeline View** with filtered figures. |
 | `figureDetail` | `id: ID!` | `Agent` | Fetches a single figure along with their works and direct influence connections for the detail panel. |
 | **`knowledgeRoadmap`** | `conceptId: ID!` | **`[RoadmapNode!]`** | **Core Feature.** Traces the prerequisite lineage of a concept using the PostgreSQL **`WITH RECURSIVE`** query. |
-| `interdisciplinaryContext` | `year: Int!`, `fields: [String]` | `[Agent!]` | Finds all significant agents/events active during a specific time for the context map. |
+| `interdisciplinaryContext` | `year: Int!`, `fields: [String]` | `[Agent!]` | Finds contemporaries across different fields for a specific year. |

@@ -1,4 +1,4 @@
-# 5. 🗃️ WIKIDATA ETL SPEC: Data Sourcing & Quality
+# 5\. 🗃️ WIKIDATA ETL SPEC: Data Sourcing & Quality
 
 This blueprint documents the rules and specific targets for the ETL process. It ensures the **"Big Bang"** data load is consistent and that all raw Wikidata properties are correctly mapped to our defined Knowledge Graph relationships.
 
@@ -21,7 +21,7 @@ The raw data extracted from Wikidata contains hundreds of property types. The ET
 | Our `RelationshipType` | Target Wikidata Properties (P-numbers) | Notes on Transformation |
 | :--- | :--- | :--- |
 | **`INFLUENCED`** | `P737` (influenced by), `P800` (notable work), `P106` (occupation) | Used primarily for `Agent` to `Agent` links. Represents general intellectual debt. |
-| **`PREREQUISITE_FOR`** | `P279` (subclass of), `P155` (follows) | **CRITICAL.** Used for `Concept` to `Concept` links. If A follows B, B is the prerequisite for A. |
+| **`PREREQUISITE_FOR`** | `P279` (subclass of), `P155` (follows) | **CRITICAL.** Maps Concept prerequisites. If A follows B, B is the prerequisite for A. |
 | **`BUILT_ON`** | `P361` (part of), `P629` (edition or translation of), `P144` (based on) | Used for `Work` to `Work` links. Shows explicit dependency or derivation. |
 | **`ASSOCIATED_WITH`** | `P1889` (different from), `P31` (instance of) | General association between an `Agent` and a `Concept` they are known for. |
 
@@ -39,6 +39,4 @@ Target figures who satisfy one of the following criteria:
 
 ### B. Relationship Deep Dive
 
-The SPARQL query must specifically target and extract the **prerequisite chain** for 10-15 foundational scientific and philosophical concepts (e.g., 'Thermodynamics', 'Calculus', 'Empiricism'). This ensures the **`PREREQUISITE_FOR`** relationships are fully populated for immediate testing of the **Knowledge Roadmap**.
-
-* **Example:** A dedicated query will pull all entities linked to the 'Calculus' concept via the `P155` (follows) property to generate the required `PREREQUISITE_FOR` edges.
+The SPARQL query must specifically target and extract the **prerequisite chain** for 10-15 foundational scientific and philosophical concepts (e.g., 'Thermodynamics', 'Calculus', 'Empiricism'). This ensures the **`PREREQUISITE_FOR`** relationships are fully populated for immediate testing.

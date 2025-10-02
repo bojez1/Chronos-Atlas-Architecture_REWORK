@@ -1,4 +1,4 @@
-# 1. 🏗️ ARCHITECTURE BLUEPRINT: Knowledge Graph Model & Stack
+# 1\. 🏗️ ARCHITECTURE BLUEPRINT: Knowledge Graph Model & Stack
 
 The Chronos Atlas is built upon a fully decoupled, asynchronous architecture optimized for high-performance graph traversal and complex relational queries. This document details the technical stack choices and, critically, the **Knowledge Graph Schema** that underpins the entire application logic.
 
@@ -11,75 +11,26 @@ The choice of **FastAPI, Strawberry, and PostgreSQL** is non-negotiable for this
 | **API Framework** | **FastAPI (Python)** | **Asynchronous Performance.** Provides high throughput necessary for concurrent frontend requests and handles concurrent database I/O efficiently, crucial for minimizing latency on complex queries. |
 | **GraphQL Layer** | **Strawberry** | **Pythonic & Async-Native.** Utilizes Python type hints for schema definition, offering a clean, type-safe development experience that integrates seamlessly with FastAPI's asynchronous nature. |
 | **Database** | **PostgreSQL** | **Relational Power for Graph Logic.** Essential for its built-in features: 1) **JSONB** support for flexible metadata, and 2) **Common Table Expressions (CTEs)**, specifically the **`WITH RECURSIVE`** clause, which is necessary to implement the Knowledge Roadmap's graph-traversal logic. |
-| **ORM/Async Driver** | **SQLAlchemy Core/AsyncPG** | Provides a robust, Pythonic interface to define and interact with the PostgreSQL schema asynchronously. |
+| **ORM/Async Driver** | **SQLAlchemy Core/AsyncPG** | Provides a robust, Pythonic interface to define models and executes database operations efficiently using asynchronous drivers. |
 
-## 1.2 The Knowledge Graph Data Model
+-----
 
-The data is structured into four primary tables that form an interconnected relational graph. The `Influence` table is the most critical component, as it defines the entire lineage of knowledge.
+## 1.2 Knowledge Graph Schema (PostgreSQL Models)
 
-### 1. Agents (Historical Figures)
+The data is structured around four primary entities and one critical relationship table.
 
-* **Purpose:** The subjects of the timeline.
-* **Represents:** People, groups, or organizations.
+### Primary Entities
 
-| Field | Type (PostgreSQL) | Notes |
-| :--- | :--- | :--- |
-| `id` | `VARCHAR(30)` | Primary Key (e.g., Wikidata ID: `Q42`). |
-| `name` | `VARCHAR(255)` | Full common name (e.g., 'Isaac Newton'). |
-| `birth_date` | `DATE` | For timeline rendering. |
-| `death_date` | `DATE` | For timeline rendering. |
-| `discipline` | `VARCHAR(100)` | Primary field (e.g., 'Physics', 'Philosophy'). |
-| `metadata` | `JSONB` | Storage for flexible data like alternate names, source URL, citation count, etc. |
+| Entity | Description | Key Fields | Notes |
+| :--- | :--- | :--- | :--- |
+| **`Agent`** | A historical figure, group, or institution. | `id` (PK), `name`, `birth_date`, `death_date`, `discipline` (e.g., 'Science', 'Philosophy') | Supports the main Timeline View. |
+| **`Work`** | A published output (book, theory, discovery). | `id` (PK), `title`, `publication_date`, `type` (e.g., 'Book', 'Treatise'), `author_id` (FK to Agent) | Links to the original creator. |
+| **`Concept`** | An abstract idea or academic concept. | `id` (PK), `name`, `definition`, `field` | Central to the Roadmap feature. |
+| **`Influence`** | **The Relationship Edge.** | `source_id` (FK), `target_id` (FK), `relationship_type` (Enum: INFLUENCED, PREREQUISITE\_FOR, BUILT\_ON, ASSOCIATED\_WITH) | This is the core table used for graph traversal. |
 
-### 2. Works (Outputs)
+### Composite Output Type
 
-* **Purpose:** Specific tangible outputs created by Agents.
-* **Represents:** Books, treatises, discoveries, symphonies, paintings.
-
-| Field | Type (PostgreSQL) | Notes |
-| :--- | :--- | :--- |
-| `id` | `VARCHAR(30)` | Primary Key. |
-| `title` | `VARCHAR(255)` | Full title of the work. |
-| `agent_id` | `VARCHAR(30)` | Foreign Key to the `Agents` table. |
-| `publication_date` | `DATE` | The date the work was published or created. |
-| `type` | `VARCHAR(50)` | Categorization (e.g., 'Book', 'Theory', 'Experiment'). |
-
-### 3. Concepts (Ideas)
-
-* **Purpose:** Abstract ideas or academic concepts that form the nodes of the Knowledge Roadmap.
-* **Represents:** 'Relativity,' 'Calculus,' 'Monarchy,' 'Natural Selection.'
-
-| Field | Type (PostgreSQL) | Notes |
-| :--- | :--- | :--- |
-| `id` | `VARCHAR(30)` | Primary Key (Wikidata ID for the concept). |
-| `name` | `VARCHAR(255)` | Common name of the concept. |
-| `definition` | `TEXT` | Brief, academic definition for display. |
-| `field` | `VARCHAR(100)` | Discipline it belongs to. |
-
-### 4. Influence (The Relational Edge)
-
-* **Purpose:** The core relationship table that links all entities together and drives the graph logic.
-* **Structure:** A many-to-many relationship linking a **source** entity to a **target** entity.
-
-| Field | Type (PostgreSQL) | Notes |
-| :--- | :--- | :--- |
-| `source_id` | `VARCHAR(30)` | ID of the source entity (Agent, Work, or Concept). |
-| `target_id` | `VARCHAR(30)` | ID of the target entity (Agent, Work, or Concept). |
-| `relationship_type` | `VARCHAR(50)` | **CRITICAL FIELD.** Must use one of the defined types below. |
-| `context` | `TEXT` | A brief description of the nature of the influence. |
-
-### Defined Relationship Types
-
-The ETL process **must** map Wikidata properties to these discrete, powerful relationship types:
-
-1. **`INFLUENCED`**: (Agent -> Agent or Work -> Work) A broad historical/intellectual influence.
-2. **`PREREQUISITE_FOR`**: (Concept -> Concept) **Crucial for the Roadmap.** Concept A is required knowledge before Concept B can be understood.
-3. **`BUILT_ON`**: (Work -> Work) Work A cites or explicitly refines the ideas in Work B.
-4. **`ASSOCIATED_WITH`**: (Agent -> Concept) Figure is known for developing or popularizing the concept.
-
-### 5. RoadmapNode (Composite Type for Recursive Output)
-
-* **Purpose:** A composite type returned by the `knowledgeRoadmap` query, combining the Concept data with the path-dependent metadata (`depth`) calculated during the recursive traversal.
+The **`RoadmapNode`** is a composite type returned by the `knowledgeRoadmap` query, combining the Concept data with the path-dependent metadata (`depth`) calculated during the recursive traversal.
 
 | Field | Source | Notes |
 | :--- | :--- | :--- |
