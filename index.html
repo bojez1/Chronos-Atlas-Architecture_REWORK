@@ -12,7 +12,10 @@
         /* Define custom Tailwind configuration */
         :root {
             font-family: 'Inter', sans-serif;
+            /* Ensure smooth color transitions for dark/light mode */
+            transition: background-color 0.3s, color 0.3s;
         }
+
         /* Custom styling for markdown tables */
         #content-area table {
             width: 100%;
@@ -22,82 +25,118 @@
             line-height: 1.5;
         }
         #content-area th, #content-area td {
-            border: 1px solid #e5e7eb; /* light gray */
+            border: 1px solid var(--border-color);
             padding: 0.75rem;
             text-align: left;
         }
+
+        /* Variables for Dark/Light mode borders and backgrounds */
+        :root {
+            --border-color: #e5e7eb; /* light-mode border */
+        }
+        .dark {
+            --border-color: #374151; /* dark-mode border (gray-700) */
+        }
+
+        /* Light Mode Table Headers */
         #content-area th {
-            background-color: #f3f4f6; /* very light gray header */
+            background-color: #f3f4f6;
             font-weight: 600;
         }
-        /* Custom styling for code blocks */
-        #content-area pre {
+        /* Dark Mode Table Headers */
+        .dark #content-area th {
             background-color: #1f2937; /* dark slate background */
-            color: #f9fafb; /* light text */
+            color: #d1d5db; /* gray-300 */
+        }
+
+        /* Custom styling for code blocks - consistent in both modes */
+        #content-area pre {
+            background-color: #111827; /* dark gray-900 */
+            color: #f9fafb;
             padding: 1rem;
             margin: 1.5rem 0;
             border-radius: 0.5rem;
             overflow-x: auto;
             white-space: pre-wrap;
             word-break: break-all;
+            border: 1px solid #374151;
         }
+        /* Inline code - light mode */
         #content-area code:not(pre code) {
-            background-color: #fee2e2; /* light red/pink for inline code */
-            color: #991b1b; /* dark red text */
+            background-color: #fef2f2; /* red-50 */
+            color: #b91c1c; /* red-700 */
             padding: 0.2rem 0.4rem;
             border-radius: 0.3rem;
             font-size: 0.875rem;
         }
+        /* Inline code - dark mode */
+        .dark #content-area code:not(pre code) {
+            background-color: #374151; /* gray-700 */
+            color: #f9fafb;
+        }
+
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 transition-colors duration-300">
 
     <div id="app" class="flex flex-col lg:flex-row h-screen overflow-hidden">
 
         <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="w-full lg:w-72 bg-white shadow-lg lg:flex flex-col overflow-y-auto border-r border-gray-200 fixed lg:static z-20 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
-            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                <h1 class="text-xl font-extrabold text-indigo-700">Chronos Atlas</h1>
-                <button id="close-sidebar" class="lg:hidden text-gray-600 hover:text-indigo-700 p-2 rounded-full transition">
+        <aside id="sidebar" class="w-full lg:w-72 bg-white dark:bg-gray-800 shadow-xl lg:flex flex-col overflow-y-auto border-r border-gray-200 dark:border-gray-700 fixed lg:static z-20 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h1 class="text-xl font-extrabold text-indigo-700 dark:text-indigo-400">Chronos Atlas</h1>
+                <!-- Dark Mode Toggle Button (Desktop/Sidebar) -->
+                <button id="toggle-dark-sidebar" class="p-2 rounded-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-indigo-400 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+                <button id="close-sidebar" class="lg:hidden text-gray-600 dark:text-gray-400 hover:text-indigo-700 dark:hover:text-indigo-400 p-2 rounded-full transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <nav class="flex-1 p-4 space-y-2">
-                <h2 class="text-xs font-semibold uppercase text-gray-500 tracking-wider pt-2 pb-1 px-3">Project Blueprints</h2>
+                <h2 class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider pt-2 pb-1 px-3">Project Blueprints</h2>
             </nav>
         </aside>
 
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto relative p-4 lg:p-8">
             <!-- Loading Indicator -->
-            <div id="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-30 transition-opacity duration-500">
+            <div id="loading" class="hidden absolute inset-0 bg-gray-50/70 dark:bg-gray-900/70 backdrop-blur-sm flex items-center justify-center z-30 transition-opacity duration-300 opacity-0">
                 <div class="flex flex-col items-center">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
-                    <p class="mt-4 text-indigo-600 font-medium">Loading Blueprint...</p>
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+                    <p class="mt-4 text-indigo-600 dark:text-indigo-400 font-medium">Loading Blueprint...</p>
                 </div>
             </div>
 
-            <!-- Header and Toggle Button -->
-            <header class="flex items-center justify-between sticky top-0 bg-gray-50 pt-1 pb-4 z-10 lg:hidden">
-                <h1 id="current-title-mobile" class="text-lg font-bold text-gray-900 truncate">Project Blueprints</h1>
-                <button id="open-sidebar" class="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition shadow-sm">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                </button>
+            <!-- Header and Toggle Button (Mobile) -->
+            <header class="flex items-center justify-between sticky top-0 bg-gray-50 dark:bg-gray-900 pt-1 pb-4 z-10 lg:hidden">
+                <h1 id="current-title-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">Project Blueprints</h1>
+                <div class="flex space-x-2">
+                    <!-- Dark Mode Toggle Button (Mobile Header) -->
+                    <button id="toggle-dark-mobile" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-sm">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </button>
+                    <button id="open-sidebar" class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-600 text-indigo-700 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-500 transition shadow-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
             </header>
             
             <!-- Blueprint Content -->
-            <article id="content-area" class="prose max-w-none bg-white p-6 rounded-xl shadow-lg"></article>
+            <article id="content-area" class="prose max-w-none bg-white dark:bg-gray-800 p-6 rounded-xl shadow-2xl dark:shadow-indigo-500/10 transition-opacity duration-300"></article>
         </main>
 
     </div>
 
     <script>
         // --- CONFIGURATION START ---
-        // !!! IMPORTANT: UPDATE THESE TWO VARIABLES WITH YOUR GITHUB INFO !!!
-        const REPO_OWNER = "bojez1"; // e.g., "johndoe"
-        const REPO_NAME = "Chronos-Atlas-Architecture_REWORK";       // e.g., "chronos-atlas"
+        // !!! IMPORTANT: YOU MUST REPLACE THESE PLACEHOLDERS WITH YOUR ACTUAL GITHUB DETAILS !!!
+        // Example: If your repo is at https://github.com/johndoe/chronos-atlas
+        const REPO_OWNER = "bojez1"; // <-- REPLACE "YOUR_GITHUB_USERNAME" (e.g., "johndoe")
+        const REPO_NAME = "Chronos-Atlas-Architecture_REWORK";       // <-- REPLACE "YOUR_REPO_NAME" (e.g., "chronos-atlas")
         // --- CONFIGURATION END ---
 
+        // This URL fetches the raw Markdown files from the 'main' branch of your repo.
         const BASE_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/`;
 
         const fileBlueprints = [
@@ -117,7 +156,35 @@
 
         // State to track the current file
         let currentFilePath = fileBlueprints[0].path;
-        
+
+        // --- DARK MODE LOGIC ---
+
+        // Toggles the 'dark' class on the HTML element
+        const toggleDarkMode = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        };
+
+        // Initialize Dark Mode
+        const initDarkMode = () => {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        };
+
+        document.getElementById('toggle-dark-sidebar').addEventListener('click', toggleDarkMode);
+        document.getElementById('toggle-dark-mobile').addEventListener('click', toggleDarkMode);
+
         // --- UI TOGGLE LOGIC ---
         document.getElementById('open-sidebar').addEventListener('click', () => {
             sidebar.classList.remove('-translate-x-full');
@@ -126,7 +193,7 @@
             sidebar.classList.add('-translate-x-full');
         });
 
-        // --- FETCHING & RENDERING LOGIC ---
+        // --- FETCHING & RENDERING LOGIC (Optimized for smoother transitions) ---
 
         // Simple exponential backoff retry logic for fetching files
         const fetchWithRetry = async (url, retries = 3, delay = 1000) => {
@@ -148,41 +215,42 @@
         };
 
         const renderContent = async (filePath) => {
-            loadingIndicator.classList.remove('opacity-0', 'pointer-events-none');
-            loadingIndicator.classList.add('opacity-100');
+            // 1. Visually fade out the current content for a smoother transition
+            contentArea.classList.add('opacity-0');
+            loadingIndicator.classList.remove('hidden');
+            // Show spinner with a slight delay
+            setTimeout(() => {
+                loadingIndicator.classList.remove('opacity-0', 'pointer-events-none');
+            }, 50); 
             
             currentFilePath = filePath;
             const file = fileBlueprints.find(f => f.path === filePath);
             
-            // Update the URL hash (like a router)
             window.location.hash = `#${filePath}`;
             
             // Update the active link in the sidebar
             document.querySelectorAll('a[data-filepath]').forEach(a => {
-                a.classList.remove('bg-indigo-100', 'text-indigo-800');
-                a.classList.add('hover:bg-gray-100', 'text-gray-700');
+                a.classList.remove('bg-indigo-100', 'text-indigo-800', 'dark:bg-indigo-700', 'dark:text-white');
+                a.classList.add('hover:bg-gray-100', 'text-gray-700', 'dark:text-gray-300', 'dark:hover:bg-gray-700');
                 if (a.dataset.filepath === filePath) {
-                    a.classList.add('bg-indigo-100', 'text-indigo-800');
-                    a.classList.remove('hover:bg-gray-100', 'text-gray-700');
+                    a.classList.add('bg-indigo-100', 'text-indigo-800', 'dark:bg-indigo-700', 'dark:text-white');
+                    a.classList.remove('hover:bg-gray-100', 'text-gray-700', 'dark:hover:bg-gray-700');
                 }
             });
 
-            // Update mobile title
             mobileTitle.textContent = file ? file.name : "Error";
+            let htmlContent = '';
 
             try {
                 const url = `${BASE_URL}${filePath}`;
                 const markdownText = await fetchWithRetry(url);
                 
                 // Use Marked.js to convert Markdown to HTML
-                const htmlContent = marked.parse(markdownText);
+                htmlContent = marked.parse(markdownText);
                 
-                contentArea.innerHTML = htmlContent;
-                contentArea.scrollTop = 0; // Scroll to top on new content load
-
             } catch (error) {
                 console.error("Failed to load blueprint:", error);
-                contentArea.innerHTML = `<div class="p-8 text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                htmlContent = `<div class="p-8 text-red-700 bg-red-50 dark:text-red-300 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg">
                     <h2 class="text-xl font-bold mb-3">Error Loading Document</h2>
                     <p class="mb-2">Could not fetch the file from GitHub. Please check the following:</p>
                     <ul class="list-disc list-inside space-y-1">
@@ -192,14 +260,22 @@
                         <li>Error Details: <code>${error.message}</code></li>
                     </ul>
                 </div>`;
-            } finally {
-                // Hide loading indicator
-                loadingIndicator.classList.add('opacity-0', 'pointer-events-none');
-                loadingIndicator.classList.remove('opacity-100');
-                // Hide sidebar on mobile after selection
-                if (window.innerWidth < 1024) {
-                    sidebar.classList.add('-translate-x-full');
-                }
+            }
+
+            // 2. Wait for the fetch, then update content and fade in smoothly
+            contentArea.innerHTML = htmlContent;
+            contentArea.scrollTop = 0;
+
+            loadingIndicator.classList.add('opacity-0', 'pointer-events-none');
+            // Restore opacity and hide spinner after the transition completes
+            setTimeout(() => {
+                contentArea.classList.remove('opacity-0');
+                loadingIndicator.classList.add('hidden');
+            }, 300); // Wait for the transition duration
+
+            // Hide sidebar on mobile after selection
+            if (window.innerWidth < 1024) {
+                sidebar.classList.add('-translate-x-full');
             }
         };
 
@@ -215,7 +291,7 @@
         // Build the navigation menu
         Object.keys(groupedFiles).forEach(group => {
             const h3 = document.createElement('h3');
-            h3.className = 'text-xs font-semibold uppercase text-gray-500 tracking-wider pt-2 pb-1 px-3';
+            h3.className = 'text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider pt-2 pb-1 px-3';
             h3.textContent = group;
             sidebarNav.appendChild(h3);
 
@@ -224,7 +300,7 @@
                 a.href = "javascript:void(0)";
                 a.textContent = file.name;
                 a.dataset.filepath = file.path;
-                a.className = 'flex items-center p-3 rounded-xl text-sm font-medium transition duration-150 ease-in-out text-gray-700 hover:bg-gray-100';
+                a.className = 'flex items-center p-3 rounded-xl text-sm font-medium transition duration-150 ease-in-out text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
                 a.addEventListener('click', () => renderContent(file.path));
                 sidebarNav.appendChild(a);
             });
@@ -234,8 +310,9 @@
         const pathFromHash = window.location.hash.substring(1);
         const initialPath = fileBlueprints.find(f => f.path === pathFromHash) ? pathFromHash : fileBlueprints[0].path;
 
-        // Load the initial content
+        // Load initial content after dark mode is initialized
         window.onload = () => {
+            initDarkMode();
             renderContent(initialPath);
         };
 
