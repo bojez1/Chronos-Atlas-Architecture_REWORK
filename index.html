@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Atlas Blueprints</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/lib/marked.umd.min.js"></script>
+    <style>
+        /* Define custom Tailwind configuration */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styling for markdown tables */
+        #content-area table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        #content-area th, #content-area td {
+            border: 1px solid #e5e7eb; /* light gray */
+            padding: 0.75rem;
+            text-align: left;
+        }
+        #content-area th {
+            background-color: #f3f4f6; /* very light gray header */
+            font-weight: 600;
+        }
+        /* Custom styling for code blocks */
+        #content-area pre {
+            background-color: #1f2937; /* dark slate background */
+            color: #f9fafb; /* light text */
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #content-area code:not(pre code) {
+            background-color: #fee2e2; /* light red/pink for inline code */
+            color: #991b1b; /* dark red text */
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app" class="flex flex-col lg:flex-row h-screen overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-full lg:w-72 bg-white shadow-lg lg:flex flex-col overflow-y-auto border-r border-gray-200 fixed lg:static z-20 transition-transform duration-300 transform -translate-x-full lg:translate-x-0">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h1 class="text-xl font-extrabold text-indigo-700">Chronos Atlas</h1>
+                <button id="close-sidebar" class="lg:hidden text-gray-600 hover:text-indigo-700 p-2 rounded-full transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <nav class="flex-1 p-4 space-y-2">
+                <h2 class="text-xs font-semibold uppercase text-gray-500 tracking-wider pt-2 pb-1 px-3">Project Blueprints</h2>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto relative p-4 lg:p-8">
+            <!-- Loading Indicator -->
+            <div id="loading" class="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center z-30 transition-opacity duration-500">
+                <div class="flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                    <p class="mt-4 text-indigo-600 font-medium">Loading Blueprint...</p>
+                </div>
+            </div>
+
+            <!-- Header and Toggle Button -->
+            <header class="flex items-center justify-between sticky top-0 bg-gray-50 pt-1 pb-4 z-10 lg:hidden">
+                <h1 id="current-title-mobile" class="text-lg font-bold text-gray-900 truncate">Project Blueprints</h1>
+                <button id="open-sidebar" class="p-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition shadow-sm">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </header>
+            
+            <!-- Blueprint Content -->
+            <article id="content-area" class="prose max-w-none bg-white p-6 rounded-xl shadow-lg"></article>
+        </main>
+
+    </div>
+
+    <script>
+        // --- CONFIGURATION START ---
+        // !!! IMPORTANT: UPDATE THESE TWO VARIABLES WITH YOUR GITHUB INFO !!!
+        const REPO_OWNER = "bojez1"; // e.g., "johndoe"
+        const REPO_NAME = "Chronos-Atlas-Architecture_REWORK";       // e.g., "chronos-atlas"
+        // --- CONFIGURATION END ---
+
+        const BASE_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/`;
+
+        const fileBlueprints = [
+            { name: "Main README", path: "README.md", group: "Core" },
+            { name: "1. Architecture Blueprint", path: "ARCHITECTURE_BLUEPRINT.md", group: "Design" },
+            { name: "2. Data Flow & Scaling", path: "DATA_FLOW_AND_SCALING.md", group: "Design" },
+            { name: "3. Execution Roadmap", path: "EXECUTION_ROADMAP.md", group: "Planning" },
+            { name: "4. GraphQL API Contract", path: "GRAPHQL_API_CONTRACT.md", group: "Specification" },
+            { name: "5. Wikidata ETL Spec", path: "WIKIDATA_ETL_SPEC.md", group: "Specification" },
+        ];
+
+        const contentArea = document.getElementById('content-area');
+        const sidebarNav = document.querySelector('#sidebar nav');
+        const loadingIndicator = document.getElementById('loading');
+        const mobileTitle = document.getElementById('current-title-mobile');
+        const sidebar = document.getElementById('sidebar');
+
+        // State to track the current file
+        let currentFilePath = fileBlueprints[0].path;
+        
+        // --- UI TOGGLE LOGIC ---
+        document.getElementById('open-sidebar').addEventListener('click', () => {
+            sidebar.classList.remove('-translate-x-full');
+        });
+        document.getElementById('close-sidebar').addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+        });
+
+        // --- FETCHING & RENDERING LOGIC ---
+
+        // Simple exponential backoff retry logic for fetching files
+        const fetchWithRetry = async (url, retries = 3, delay = 1000) => {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error(`404: File not found. Check your REPO_OWNER and REPO_NAME configuration.`);
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.text();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                }
+            }
+        };
+
+        const renderContent = async (filePath) => {
+            loadingIndicator.classList.remove('opacity-0', 'pointer-events-none');
+            loadingIndicator.classList.add('opacity-100');
+            
+            currentFilePath = filePath;
+            const file = fileBlueprints.find(f => f.path === filePath);
+            
+            // Update the URL hash (like a router)
+            window.location.hash = `#${filePath}`;
+            
+            // Update the active link in the sidebar
+            document.querySelectorAll('a[data-filepath]').forEach(a => {
+                a.classList.remove('bg-indigo-100', 'text-indigo-800');
+                a.classList.add('hover:bg-gray-100', 'text-gray-700');
+                if (a.dataset.filepath === filePath) {
+                    a.classList.add('bg-indigo-100', 'text-indigo-800');
+                    a.classList.remove('hover:bg-gray-100', 'text-gray-700');
+                }
+            });
+
+            // Update mobile title
+            mobileTitle.textContent = file ? file.name : "Error";
+
+            try {
+                const url = `${BASE_URL}${filePath}`;
+                const markdownText = await fetchWithRetry(url);
+                
+                // Use Marked.js to convert Markdown to HTML
+                const htmlContent = marked.parse(markdownText);
+                
+                contentArea.innerHTML = htmlContent;
+                contentArea.scrollTop = 0; // Scroll to top on new content load
+
+            } catch (error) {
+                console.error("Failed to load blueprint:", error);
+                contentArea.innerHTML = `<div class="p-8 text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                    <h2 class="text-xl font-bold mb-3">Error Loading Document</h2>
+                    <p class="mb-2">Could not fetch the file from GitHub. Please check the following:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Did you update **REPO_OWNER** and **REPO_NAME** in the script configuration?</li>
+                        <li>Is your GitHub repository set to **Public**?</li>
+                        <li>Is **GitHub Pages** enabled for the 'main' branch?</li>
+                        <li>Error Details: <code>${error.message}</code></li>
+                    </ul>
+                </div>`;
+            } finally {
+                // Hide loading indicator
+                loadingIndicator.classList.add('opacity-0', 'pointer-events-none');
+                loadingIndicator.classList.remove('opacity-100');
+                // Hide sidebar on mobile after selection
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            }
+        };
+
+        // --- INITIALIZATION ---
+        
+        // Group files for sidebar
+        const groupedFiles = fileBlueprints.reduce((acc, file) => {
+            acc[file.group] = acc[file.group] || [];
+            acc[file.group].push(file);
+            return acc;
+        }, {});
+
+        // Build the navigation menu
+        Object.keys(groupedFiles).forEach(group => {
+            const h3 = document.createElement('h3');
+            h3.className = 'text-xs font-semibold uppercase text-gray-500 tracking-wider pt-2 pb-1 px-3';
+            h3.textContent = group;
+            sidebarNav.appendChild(h3);
+
+            groupedFiles[group].forEach(file => {
+                const a = document.createElement('a');
+                a.href = "javascript:void(0)";
+                a.textContent = file.name;
+                a.dataset.filepath = file.path;
+                a.className = 'flex items-center p-3 rounded-xl text-sm font-medium transition duration-150 ease-in-out text-gray-700 hover:bg-gray-100';
+                a.addEventListener('click', () => renderContent(file.path));
+                sidebarNav.appendChild(a);
+            });
+        });
+
+        // Determine which file to load first (based on URL hash or default)
+        const pathFromHash = window.location.hash.substring(1);
+        const initialPath = fileBlueprints.find(f => f.path === pathFromHash) ? pathFromHash : fileBlueprints[0].path;
+
+        // Load the initial content
+        window.onload = () => {
+            renderContent(initialPath);
+        };
+
+    </script>
+</body>
+</html>
